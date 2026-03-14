@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion — Tekton</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+</head>
+<body style="display:flex;flex-direction:column;min-height:100vh;">
+
+<nav class="navbar">
+  <div class="container">
+    <a href="../index.html" class="brand">TEK<span>TON</span></a>
+    <div id="nav-user"></div>
+  </div>
+</nav>
+
+<main style="flex:1;display:flex;align-items:center;justify-content:center;padding:3rem 1rem;">
+  <div style="width:100%;max-width:400px;">
+
+    <div style="text-align:center;margin-bottom:1.8rem;">
+      <h1 style="font-size:1.9rem;margin-bottom:.3rem;">Connexion</h1>
+      <p style="color:#888;font-size:.88rem;">
+        Pas encore de compte ? <a href="register.html" style="color:#e07b1a;">Créer un profil</a>
+      </p>
+    </div>
+
+    <div style="background:#fff;border-radius:10px;border:1px solid #e0ddd8;padding:2.2rem;">
+
+      <div id="msg-err" style="display:none;background:#fdecea;border:1.5px solid #c0392b;border-radius:5px;padding:.9rem 1.1rem;color:#c0392b;font-size:.88rem;margin-bottom:1rem;"></div>
+
+      <div style="display:flex;flex-direction:column;gap:1.1rem;">
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" class="form-control" id="f-email" placeholder="vous@email.com" autofocus>
+        </div>
+        <div class="form-group">
+          <label>Mot de passe</label>
+          <input type="password" class="form-control" id="f-pw" placeholder="••••••••">
+        </div>
+        <button class="btn btn-primary btn-full btn-lg" id="btn-login" type="button">
+          Se connecter →
+        </button>
+      </div>
+
+      <div style="text-align:center;margin-top:1.2rem;">
+        <a href="register.html" style="font-size:.84rem;color:#aaa;">Créer un compte professionnel</a>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container footer-in">
+    <div class="footer-brand">TEK<span>TON</span></div>
+    <div class="footer-links"><a href="workers.html">Professionnels</a></div>
+    <div style="font-size:.76rem;color:#333;">© 2024 Tekton</div>
+  </div>
+</footer>
+
+<script>
+if (!firebase.apps.length) {
+  firebase.initializeApp({
+    apiKey:            "AIzaSyCkzl2sPvDZ4cn3QdfikiREas5U5KUjfEA",
+    authDomain:        "tekton-5d2da.firebaseapp.com",
+    projectId:         "tekton-5d2da",
+    storageBucket:     "tekton-5d2da.firebasestorage.app",
+    messagingSenderId: "420545398258",
+    appId:             "1:420545398258:web:ac73c77ef1dc83b261576b"
+  });
+}
+
+var auth = firebase.auth();
+
+auth.onAuthStateChanged(function(user) {
+  if (user) location.href = 'dashboard.html';
+});
+
+function doLogin() {
+  var email = document.getElementById('f-email').value.trim();
+  var pw    = document.getElementById('f-pw').value;
+  var errEl = document.getElementById('msg-err');
+  var btn   = document.getElementById('btn-login');
+
+  errEl.style.display = 'none';
+
+  if (!email || !pw) {
+    errEl.innerHTML = 'E-mail et mot de passe requis.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Connexion…';
+
+  auth.signInWithEmailAndPassword(email, pw)
+    .then(function() {
+      var ret = new URLSearchParams(location.search).get('returnTo');
+      location.href = ret ? decodeURIComponent(ret) : 'dashboard.html';
+    })
+    .catch(function(e) {
+      var msg = 'Identifiants incorrects.';
+      if (e.code === 'auth/too-many-requests') msg = 'Trop de tentatives. Attendez quelques minutes.';
+      errEl.innerHTML = msg;
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Se connecter →';
+    });
+}
+
+document.getElementById('btn-login').onclick = doLogin;
+document.getElementById('f-email').onkeydown = function(e){ if(e.key==='Enter') doLogin(); };
+document.getElementById('f-pw').onkeydown    = function(e){ if(e.key==='Enter') doLogin(); };
+</script>
+</body>
+</html>

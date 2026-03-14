@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Professionnels — Tekton</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<!-- ══ NAVBAR ══════════════════════════════════════════════════ -->
+<nav class="navbar">
+  <div class="container">
+    <a href="../index.html" class="navbar-brand">TEK<span>TON</span></a>
+    <div class="navbar-center">
+      <a href="workers.html" class="nav-link" style="color:#fff;">Professionnels</a>
+    </div>
+    <div id="nav-auth"></div>
+  </div>
+</nav>
+
+<!-- ══ HEADER DE PÁGINA ═════════════════════════════════════════ -->
+<div style="background:var(--color-dark);padding:2rem 0 1.5rem;">
+  <div class="container">
+    <div class="breadcrumb" style="margin-bottom:0.8rem;">
+      <a href="../index.html">Accueil</a>
+      <span>›</span>
+      <span style="color:#777;">Professionnels</span>
+    </div>
+    <h1 style="color:#fff;font-size:2.4rem;">Trouver un professionnel</h1>
+    <p style="color:#777;margin-top:0.3rem;font-size:0.9rem;">
+      <span id="result-count">—</span> résultat(s) · Paris & Île-de-France
+    </p>
+  </div>
+</div>
+
+<!-- ══ BARRA DE FILTROS ═════════════════════════════════════════ -->
+<div style="background:var(--color-surface);border-bottom:1.5px solid var(--color-border);padding:1rem 0;position:sticky;top:var(--navbar-height);z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+  <div class="container">
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;align-items:flex-end;">
+      <div class="form-group" style="flex:1;min-width:150px;">
+        <label>Métier</label>
+        <select class="form-control" id="filter-trade">
+          <option value="">Tous les métiers</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:1;min-width:150px;">
+        <label>Ville / Arrondissement</label>
+        <input type="text" class="form-control" id="filter-city" placeholder="Paris 11e…">
+      </div>
+      <div class="form-group" style="min-width:120px;">
+        <label>Trier par</label>
+        <select class="form-control" id="filter-sort">
+          <option value="plan">Mis en avant</option>
+          <option value="rating">Mieux notés</option>
+          <option value="recent">Plus récents</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="applyFilters()" style="margin-top:1.1rem;">
+        Filtrer
+      </button>
+      <button class="btn btn-ghost" onclick="resetFilters()" style="margin-top:1.1rem;">
+        ✕
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAGS DE OFICIO ═══════════════════════════════════════════ -->
+<div style="background:var(--color-bg);padding:0.8rem 0;border-bottom:1px solid var(--color-border);">
+  <div class="container">
+    <div class="filter-tags" id="trade-tags"></div>
+  </div>
+</div>
+
+<!-- ══ GRID DE TRABAJADORES ════════════════════════════════════ -->
+<section class="page-section">
+  <div class="container">
+    <div class="workers-grid" id="workers-grid">
+      <!-- Renderizado por JS -->
+    </div>
+
+    <!-- Paginación -->
+    <div id="pagination" style="margin-top:var(--space-xl);display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;"></div>
+  </div>
+</section>
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">TEK<span>TON</span></div>
+    <div class="footer-links">
+      <a href="register.html">Inscription pro</a>
+      <a href="/cdn-cgi/l/email-protection#c9aaa6a7bda8aabd89bdaca2bda6a7e7afbb">Contact</a>
+    </div>
+    <div style="font-size:0.78rem;color:#444;">© 2024 Tekton</div>
+  </div>
+</footer>
+
+<!-- ══ SCRIPTS ══════════════════════════════════════════════════ -->
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="../js/config.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/utils.js"></script>
+<script>
+  // ── Estado de la página ──
+  let currentPage = 1;
+
+  // ── Navbar ──
+  updateNavbar("../");
+
+  // ── Poblar selects ──
+  const filterTrade = document.getElementById("filter-trade");
+  APP_CONFIG.trades.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t.value;
+    opt.textContent = `${t.emoji} ${t.label}`;
+    filterTrade.appendChild(opt);
+  });
+
+  // ── Leer params de URL ──
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("trade")) filterTrade.value = urlParams.get("trade");
+  if (urlParams.get("city"))  document.getElementById("filter-city").value = urlParams.get("city");
+  if (urlParams.get("page"))  currentPage = parseInt(urlParams.get("page")) || 1;
+
+  // ── Tags de oficio ──
+  const tagsEl = document.getElementById("trade-tags");
+
+  function buildTags(activeTrade) {
+    tagsEl.innerHTML = "";
+
+    const allBtn = document.createElement("button");
+    allBtn.className = "filter-tag" + (!activeTrade ? " active" : "");
+    allBtn.textContent = "Tous";
+    allBtn.onclick = () => { filterTrade.value = ""; applyFilters(); };
+    tagsEl.appendChild(allBtn);
+
+    APP_CONFIG.trades.forEach(t => {
+      const btn = document.createElement("button");
+      btn.className = "filter-tag" + (activeTrade === t.value ? " active" : "");
+      btn.textContent = `${t.emoji} ${t.label}`;
+      btn.onclick = () => { filterTrade.value = t.value; applyFilters(); };
+      tagsEl.appendChild(btn);
+    });
+  }
+
+  buildTags(filterTrade.value);
+
+  // ── Renderizado principal ──
+  function renderWorkers() {
+    const trade = filterTrade.value;
+    const city  = document.getElementById("filter-city").value;
+
+    const { results, total, totalPages } = searchWorkers({
+      trade, city,
+      page:    currentPage,
+      perPage: APP_CONFIG.ui.workersPerPage,
+    });
+
+    document.getElementById("result-count").textContent = total;
+
+    const grid = document.getElementById("workers-grid");
+
+    if (results.length === 0) {
+      grid.innerHTML = renderEmpty(
+        "Aucun professionnel trouvé",
+        "Modifiez vos critères ou revenez bientôt.",
+        `<button class="btn btn-outline" onclick="resetFilters()">Voir tous les pros</button>`
+      );
+    } else {
+      grid.innerHTML = "";
+      results.forEach(w => { grid.innerHTML += buildWorkerCard(w, ""); });
+    }
+
+    // Paginación
+    renderPagination(currentPage, totalPages);
+  }
+
+  function renderPagination(page, totalPages) {
+    const pag = document.getElementById("pagination");
+    if (totalPages <= 1) { pag.innerHTML = ""; return; }
+
+    let html = "";
+    for (let i = 1; i <= totalPages; i++) {
+      html += `
+        <button onclick="goToPage(${i})" class="btn ${i === page ? 'btn-primary' : 'btn-ghost'} btn-sm">
+          ${i}
+        </button>
+      `;
+    }
+    pag.innerHTML = html;
+  }
+
+  function goToPage(page) {
+    currentPage = page;
+    updateUrlParams({ page: page > 1 ? page : null });
+    renderWorkers();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // ── Aplicar/resetear filtros ──
+  function applyFilters() {
+    currentPage = 1;
+    buildTags(filterTrade.value);
+    updateUrlParams({
+      trade: filterTrade.value || null,
+      city:  document.getElementById("filter-city").value || null,
+      page:  null,
+    });
+    renderWorkers();
+  }
+
+  function resetFilters() {
+    filterTrade.value = "";
+    document.getElementById("filter-city").value = "";
+    currentPage = 1;
+    history.replaceState(null, "", window.location.pathname);
+    buildTags("");
+    renderWorkers();
+  }
+
+  document.getElementById("filter-city").addEventListener

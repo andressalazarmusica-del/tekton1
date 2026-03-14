@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tekton — Trouvez un professionnel du bâtiment à Paris</title>
+  <meta name="description" content="Tekton connecte particuliers et professionnels de la construction en Île-de-France. Trouvez rapidement un électricien, plombier ou maçon qualifié.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ══ NAVBAR ══════════════════════════════════════════════════ -->
+<nav class="navbar">
+  <div class="container">
+    <a href="index.html" class="navbar-brand">TEK<span>TON</span></a>
+
+    <div class="navbar-center">
+      <a href="pages/workers.html" class="nav-link">Trouver un pro</a>
+      <a href="pages/register.html" class="nav-link">Je suis professionnel</a>
+    </div>
+
+    <!-- Contenido dinámico según sesión (auth.js → updateNavbar) -->
+    <div id="nav-auth"></div>
+  </div>
+</nav>
+
+<!-- ══ HERO ════════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="container hero-content">
+
+    <div class="hero-label">🏗️ Marketplace BTP — Paris & Île-de-France</div>
+
+    <h1>Trouvez <em>le bon pro</em><br>pour vos travaux.</h1>
+
+    <p class="hero-sub">
+      Tekton connecte directement les particuliers avec des professionnels du bâtiment qualifiés — vérifiés, notés, disponibles.
+    </p>
+
+    <!-- Búsqueda rápida inline -->
+    <div class="hero-actions">
+      <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;background:rgba(255,255,255,0.06);padding:0.6rem;border-radius:var(--radius-lg);border:1px solid rgba(255,255,255,0.1);">
+        <select id="qs-trade" style="background:#2c2c2c;color:#fff;border:none;padding:0.55rem 0.8rem;border-radius:var(--radius);font-size:0.9rem;cursor:pointer;min-width:160px;">
+          <option value="">Tous les métiers</option>
+        </select>
+        <input type="text" id="qs-city" placeholder="Arrondissement, ville…"
+          style="background:#2c2c2c;color:#fff;border:none;padding:0.55rem 0.9rem;border-radius:var(--radius);font-size:0.9rem;min-width:180px;">
+        <button onclick="quickSearch()" class="btn btn-primary">
+          Rechercher →
+        </button>
+      </div>
+    </div>
+
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-value" id="stat-workers">—</div>
+        <div class="hero-stat-label">Professionnels</div>
+      </div>
+      <div>
+        <div class="hero-stat-value" id="stat-trades">—</div>
+        <div class="hero-stat-label">Métiers couverts</div>
+      </div>
+      <div>
+        <div class="hero-stat-value">0€</div>
+        <div class="hero-stat-label">Commission client</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══ BÚSQUEDA POR OFICIO ══════════════════════════════════════ -->
+<section class="page-section-sm" style="background:var(--color-surface);border-bottom:1px solid var(--color-border);">
+  <div class="container">
+    <h2 style="font-size:1.5rem;margin-bottom:var(--space-lg);">Chercher par métier</h2>
+    <div id="trades-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--space-md);"></div>
+  </div>
+</section>
+
+<!-- ══ PROFESIONALES RECIENTES ══════════════════════════════════ -->
+<section class="page-section">
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem;margin-bottom:var(--space-xl);">
+      <div>
+        <h2 style="font-size:2rem;">Professionnels récents</h2>
+        <p style="color:var(--color-muted);margin-top:0.3rem;">Les derniers profils vérifiés sur la plateforme</p>
+      </div>
+      <a href="pages/workers.html" class="btn btn-outline">Voir tous les pros →</a>
+    </div>
+    <div class="workers-grid" id="featured-workers">
+      <!-- Renderizado por JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ══ CÓMO FUNCIONA ════════════════════════════════════════════ -->
+<section class="page-section" style="background:var(--color-surface);">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:var(--space-xl);">
+      <h2 style="font-size:2rem;">Comment ça marche ?</h2>
+      <p style="color:var(--color-muted);margin-top:0.4rem;">Simple, rapide, sans intermédiaire</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-number">01</div>
+        <h3>Cherchez</h3>
+        <p>Filtrez par métier et par arrondissement. Parcourez les profils vérifiés.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">02</div>
+        <h3>Comparez</h3>
+        <p>Consultez les notes, avis clients et descriptions détaillées de chaque professionnel.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">03</div>
+        <h3>Contactez</h3>
+        <p>Appelez ou écrivez directement. Pas d'intermédiaire, pas de commission cachée.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">04</div>
+        <h3>Vous êtes pro ?</h3>
+        <p>Créez votre profil gratuitement et recevez des demandes dans votre zone.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CTA PROFESIONAL ══════════════════════════════════════════ -->
+<section style="background:var(--color-accent);padding:var(--space-2xl) 0;text-align:center;">
+  <div class="container">
+    <h2 style="font-size:2.2rem;color:#fff;">Vous êtes professionnel du bâtiment ?</h2>
+    <p style="color:rgba(255,255,255,0.8);margin:var(--space-md) auto;max-width:440px;">
+      Rejoignez Tekton gratuitement. Soyez visible par des milliers de clients dans votre secteur.
+    </p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:var(--space-lg);">
+      <a href="pages/register.html" class="btn btn-secondary btn-lg">
+        Créer mon profil gratuit →
+      </a>
+      <a href="pages/workers.html" class="btn btn-lg" style="background:rgba(255,255,255,0.15);color:#fff;border:1.5px solid rgba(255,255,255,0.3);">
+        Voir les profils
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════ -->
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">TEK<span>TON</span></div>
+    <div class="footer-links">
+      <a href="pages/workers.html">Trouver un pro</a>
+      <a href="pages/register.html">Inscription pro</a>
+      <a href="/cdn-cgi/l/email-protection#45262a2b312426310531202e312a2b6b2337">Contact</a>
+    </div>
+    <div style="font-size:0.78rem;color:#444;">© 2024 Tekton · MVP v1.0</div>
+  </div>
+</footer>
+
+<!-- ══ SCRIPTS ══════════════════════════════════════════════════ -->
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/utils.js"></script>
+<script>
+  // ── Navbar dinámica ──
+  updateNavbar("");
+
+  // ── Select de oficios en hero ──
+  const qsTrade = document.getElementById("qs-trade");
+  APP_CONFIG.trades.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t.value;
+    opt.textContent = `${t.emoji} ${t.label}`;
+    qsTrade.appendChild(opt);
+  });
+
+  // ── Estadísticas ──
+  const allWorkers = getAllWorkers();
+  document.getElementById("stat-workers").textContent = allWorkers.length;
+  const activeTrades = new Set(allWorkers.map(w => w.trade)).size;
+  document.getElementById("stat-trades").textContent = activeTrades;
+
+  // ── Grilla de oficios ──
+  const tradesGrid = document.getElementById("trades-grid");
+  APP_CONFIG.trades.forEach(t => {
+    const count = allWorkers.filter(w => w.trade === t.value).length;
+    if (count === 0) return;
+    tradesGrid.innerHTML += `
+      <a href="pages/workers.html?trade=${t.value}"
+         style="background:var(--color-bg);border:1.5px solid var(--color-border);
+                border-radius:var(--radius-lg);padding:1rem 1.1rem;
+                display:flex;flex-direction:column;gap:0.3rem;
+                transition:all 0.18s;text-decoration:none;"
+         onmouseover="this.style.borderColor='var(--color-accent)';this.style.transform='translateY(-2px)'"
+         onmouseout="this.style.borderColor='var(--color-border)';this.style.transform=''">
+        <div style="font-size:1.5rem;">${t.emoji}</div>
+        <div style="font-family:var(--font-display);font-weight:700;font-size:0.95rem;">${t.label}</div>
+        <div style="font-size:0.75rem;color:var(--color-muted);">${count} professionnel${count > 1 ? "s" : ""}</div>
+      </a>
+    `;
+  });
+
+  // ── Profesionales destacados (3 primeros según orden del search) ──
+  const { results: featured } = searchWorkers({ perPage: 3 });
+  const featuredEl = document.getElementById("featured-workers");
+  if (featured.length === 0) {
+    featuredEl.innerHTML = renderEmpty("Aucun professionnel encore inscrit.", "Soyez le premier !", '<a href="pages/register.html" class="btn btn-primary">Créer un profil</a>');
+  } else {
+    featured.forEach(w => { featuredEl.innerHTML += buildWorkerCard(w, "pages/"); });
+  }
+
+  // ── Búsqueda rápida ──
+  function quickSearch() {
+    const trade = document.getElementById("qs-trade").value;
+    const city  = document.getElementById("qs-city").value;
+    const params = new URLSearchParams();
+    if (trade) params.set("trade", trade);
+    if (city)  params.set("city", city);
+    window.location.href = "pages/workers.html" + (params.toString() ? "?" + params : "");
+  }

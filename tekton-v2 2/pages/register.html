@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inscription — Tekton</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <a href="../index.html" class="brand">TEK<span>TON</span></a>
+    <div id="nav-user"></div>
+  </div>
+</nav>
+
+<div style="background:#1a1a1a;padding:2rem 0 1.5rem;">
+  <div class="container">
+    <div class="bc"><a href="../index.html">Accueil</a><span>›</span><span style="color:#777;">Inscription</span></div>
+    <h1 style="color:#fff;font-size:2.2rem;margin-top:.5rem;">Créer mon compte professionnel</h1>
+    <p style="color:#777;font-size:.88rem;margin-top:.3rem;">Gratuit · Visible immédiatement · 0% commission</p>
+  </div>
+</div>
+
+<main class="section">
+  <div class="container" style="max-width:600px;">
+    <div style="background:#fff;border-radius:10px;border:1px solid #e0ddd8;padding:2.2rem;">
+
+      <p style="color:#888;font-size:.88rem;margin-bottom:1.6rem;">
+        Déjà inscrit ? <a href="login.html" style="color:#e07b1a;">Se connecter</a>
+      </p>
+
+      <div id="msg-ok"  style="display:none;background:#e8f5e9;border:1.5px solid #1e7e34;border-radius:5px;padding:.9rem 1.1rem;color:#1e7e34;font-size:.9rem;margin-bottom:1rem;"></div>
+      <div id="msg-err" style="display:none;background:#fdecea;border:1.5px solid #c0392b;border-radius:5px;padding:.9rem 1.1rem;color:#c0392b;font-size:.9rem;margin-bottom:1rem;"></div>
+
+      <div style="display:flex;flex-direction:column;gap:1.1rem;">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div class="form-group">
+            <label>E-mail *</label>
+            <input type="email" class="form-control" id="f-email" placeholder="vous@email.com">
+          </div>
+          <div class="form-group">
+            <label>Mot de passe *</label>
+            <input type="password" class="form-control" id="f-pw" placeholder="8 caractères min.">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Nom complet *</label>
+          <input type="text" class="form-control" id="f-name" placeholder="Jean Dupont">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div class="form-group">
+            <label>Métier *</label>
+            <select class="form-control" id="f-trade">
+              <option value="">Sélectionner…</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Zone d'intervention *</label>
+            <input type="text" class="form-control" id="f-city" placeholder="Paris 15e…">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Présentation * <small style="font-weight:400;color:#bbb;">(min. 50 car.)</small></label>
+          <textarea class="form-control" id="f-desc" rows="3"
+            placeholder="Décrivez votre expérience…"></textarea>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div class="form-group">
+            <label>Téléphone</label>
+            <input type="tel" class="form-control" id="f-phone" placeholder="06 12 34 56 78">
+          </div>
+          <div class="form-group">
+            <label>E-mail de contact</label>
+            <input type="email" class="form-control" id="f-cemail" placeholder="pro@email.com">
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-full btn-lg" id="btn-sub" type="button">
+          Créer mon profil →
+        </button>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container footer-in">
+    <div class="footer-brand">TEK<span>TON</span></div>
+    <div class="footer-links">
+      <a href="workers.html">Professionnels</a>
+      <a href="login.html">Connexion</a>
+    </div>
+    <div style="font-size:.76rem;color:#333;">© 2024 Tekton</div>
+  </div>
+</footer>
+
+<script>
+if (!firebase.apps.length) {
+  firebase.initializeApp({
+    apiKey:            "AIzaSyCkzl2sPvDZ4cn3QdfikiREas5U5KUjfEA",
+    authDomain:        "tekton-5d2da.firebaseapp.com",
+    projectId:         "tekton-5d2da",
+    storageBucket:     "tekton-5d2da.firebasestorage.app",
+    messagingSenderId: "420545398258",
+    appId:             "1:420545398258:web:ac73c77ef1dc83b261576b"
+  });
+}
+
+var auth = firebase.auth();
+var db   = firebase.firestore();
+
+var TRADES = [
+  {v:'electricien',l:'Électricien',e:'⚡'},{v:'plombier',l:'Plombier',e:'🔧'},
+  {v:'peintre',l:'Peintre',e:'🖌️'},{v:'menuisier',l:'Menuisier',e:'🪵'},
+  {v:'carreleur',l:'Carreleur',e:'🪨'},{v:'macon',l:'Maçon',e:'🧱'},
+  {v:'charpentier',l:'Charpentier',e:'🏗️'},{v:'couvreur',l:'Couvreur',e:'🏠'},
+  {v:'plaquier',l:'Plaquiste',e:'📋'},{v:'serrurier',l:'Serrurier',e:'🔑'},
+  {v:'chauffagiste',l:'Chauffagiste',e:'🔥'},{v:'paysagiste',l:'Paysagiste',e:'🌿'},
+  {v:'autre',l:'Autre',e:'🛠️'},
+];
+
+function esc(s) {
+  return String(s||'').replace(/[&<>"']/g,function(m){
+    return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m];
+  });
+}
+
+function showMsg(type, html) {
+  document.getElementById('msg-ok').style.display  = 'none';
+  document.getElementById('msg-err').style.display = 'none';
+  var el = document.getElementById(type === 'ok' ? 'msg-ok' : 'msg-err');
+  el.innerHTML = html;
+  el.style.display = 'block';
+  el.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+// Poblar select
+TRADES.forEach(function(t) {
+  var o = document.createElement('option');
+  o.value = t.v; o.textContent = t.e + ' ' + t.l;
+  document.getElementById('f-trade').appendChild(o);
+});
+
+// Redirigir si ya logueado
+auth.onAuthStateChanged(function(user) {
+  if (user) location.href = 'dashboard.html';
+});
+
+document.getElementById('btn-sub').onclick = function() {
+  var email  = document.getElementById('f-email').value.trim();
+  var pw     = document.getElementById('f-pw').value;
+  var name   = document.getElementById('f-name').value.trim();
+  var trade  = document.getElementById('f-trade').value;
+  var city   = document.getElementById('f-city').value.trim();
+  var desc   = document.getElementById('f-desc').value.trim();
+  var phone  = document.getElementById('f-phone').value.trim();
+  var cemail = document.getElementById('f-cemail').value.trim();
+
+  if (!email)           { showMsg('err','E-mail requis.');               return; }
+  if (pw.length < 8)    { showMsg('err','Mot de passe min. 8 car.');     return; }
+  if (!name)            { showMsg('err','Nom requis.');                   return; }
+  if (!trade)           { showMsg('err','Choisissez un métier.');         return; }
+  if (!city)            { showMsg('err','Zone d\'intervention requise.'); return; }
+  if (desc.length < 50) { showMsg('err','Description min. 50 car.');     return; }
+  if (!phone && !cemail){ showMsg('err','Au moins un contact requis.');   return; }
+
+  var btn = document.getElementById('btn-sub');
+  btn.disabled = true; btn.textContent = 'Création…';
+
+  // 1. Crear cuenta Firebase Auth
+  auth.createUserWithEmailAndPassword(email, pw)
+    .then(function(cred) {
+      var uid = cred.user.uid;
+
+      // 2. Guardar perfil en Firestore con el UID real de Firebase
+      return db.collection('workers').add({
+        name:        esc(name),
+        trade:       trade,
+        city:        esc(city),
+        description: esc(desc),
+        phone:       esc(phone),
+        email:       esc(cemail || email),
+        photo:       '',
+        userId:      uid,      // ← UID real de Firebase Auth
+        verified:    false,
+        rating:      0,
+        reviewCount: 0,
+        available:   true,
+        specialties: [],
+        jobTypes:    [],
+        createdAt:   firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt:   firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    })
+    .then(function(docRef) {
+      showMsg('ok',
+        '✅ Compte créé ! ' +
+        '<a href="edit-profile.html" style="color:#1e7e34;font-weight:700;">' +
+        'Compléter mon profil →</a>'
+      );
+      setTimeout(function(){ location.href = 'edit-profile.html'; }, 2000);
+    })
+    .catch(function(e) {
+      var msg = '❌ ' + e.message;
+      if (e.code === 'auth/email-already-in-use') msg = 'Cet e-mail est déjà utilisé. <a href="login.html" style="color:#c0392b;">Se connecter →</a>';
+      if (e.code === 'auth/weak-password')        msg = 'Mot de passe trop faible (min. 8 car.).';
+      if (e.code === 'auth/invalid-email')        msg = 'E-mail invalide.';
+      showMsg('err', msg);
+      btn.disabled = false; btn.textContent = 'Créer mon profil →';
+    });
+};
+</script>
+</body>
+</html>

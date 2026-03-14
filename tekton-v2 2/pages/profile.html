@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profil — Tekton</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <a href="../index.html" class="brand">TEK<span>TON</span></a>
+    <div class="nav-links hide-mob">
+      <a href="workers.html" class="nav-link">← Retour aux pros</a>
+    </div>
+    <div id="nav-user">
+      <div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0;"></div>
+    </div>
+  </div>
+</nav>
+
+<div id="page">
+  <div style="padding:5rem 0;text-align:center;">
+    <div class="spinner" style="margin:0 auto;"></div>
+  </div>
+</div>
+
+<footer>
+  <div class="container footer-in">
+    <div class="footer-brand">TEK<span>TON</span></div>
+    <div class="footer-links">
+      <a href="workers.html">Professionnels</a>
+      <a href="register.html">Inscription</a>
+    </div>
+    <div style="font-size:.76rem;color:#333;">© 2024 Tekton</div>
+  </div>
+</footer>
+
+<script type="module">
+  import { auth, db } from '../js/firebase.js';
+  import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const TRADES = [
+    {value:'electricien',label:'Électricien',emoji:'⚡'},{value:'plombier',label:'Plombier',emoji:'🔧'},
+    {value:'peintre',label:'Peintre',emoji:'🖌️'},{value:'menuisier',label:'Menuisier',emoji:'🪵'},
+    {value:'carreleur',label:'Carreleur',emoji:'🪨'},{value:'macon',label:'Maçon',emoji:'🧱'},
+    {value:'charpentier',label:'Charpentier',emoji:'🏗️'},{value:'couvreur',label:'Couvreur',emoji:'🏠'},
+    {value:'plaquier',label:'Plaquiste',emoji:'📋'},{value:'serrurier',label:'Serrurier',emoji:'🔑'},
+    {value:'chauffagiste',label:'Chauffagiste',emoji:'🔥'},{value:'paysagiste',label:'Paysagiste',emoji:'🌿'},
+    {value:'autre',label:'Autre',emoji:'🛠️'},
+  ];
+
+  const CERT_LABELS = {
+    rge:'🌿 RGE',qualibat:'🏛️ Qualibat',qualifelec:'⚡ Qualifelec',
+    pgn:'🔥 PGN/PGP',decennale:'🛡️ Assurance décennale',
+    rc:'📄 RC Professionnelle',autoentrepreneur:'💼 Auto-entrepreneur',caces:'🚜 CACES'
+  };
+
+  function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+  function initials(n){return(n||'?').split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase();}
+  function getTrade(v){return TRADES.find(t=>t.value===v)||{label:v,emoji:'🛠️'};}
+  function stars(r){
+    if(!r)return '<span style="color:#ccc;font-style:italic;font-size:.84rem;">Pas encore d\'avis</span>';
+    return `<span style="color:var(--accent);letter-spacing:.04em;">${'★'.repeat(Math.floor(r))}${'☆'.repeat(5-Math.floor(r))}</span><span style="color:var(--muted);font-size:.84rem;margin-left:.3rem;">${r}/5</span>`;
+  }
+  function fmtDate(ts){
+    if(!ts)return '';
+    const d=ts.toDate?ts.toDate():new Date(ts);
+    return d.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  }
+
+  // Navbar
+  onAuthStateChanged(auth, user=>{
+    const nav=document.getElementById('nav-user');
+    if(user){
+      nav.innerHTML=`<a href="dashboard.html" class="btn-nav-ghost">Mon espace</a><button class="btn-nav" id="lo">Déconnexion</button>`;
+      document.getElementById('lo').onclick=()=>signOut(auth).then(()=>location.href='../index.html');
+    } else {
+      nav.innerHTML=`<a href="login.html" class="nav-link hide-mob">Connexion</a><a href="register.html" class="btn-nav">Je suis professionnel</a>`;
+    }
+  });
+
+  const id  = new URLSearchParams(location.search).get('id');
+  const pg  = document.getElementById('page');
+
+  function notFound(){
+    pg.innerHTML=`<div class="container" style="padding:5rem 0;text-align:center;">
+      <div style="font-size:3rem;margin-bottom:1rem;">🔍</div>
+      <h2>Profil introuvable</h2>
+      <p style="color:var(--muted);margin:.8rem 0 1.5rem;">Ce profil n'existe pas ou a été supprimé.</p>
+      <a href="workers.html" class="btn btn-primary">Voir les professionnels</a>
+    </div>`;
+  }
+
+  if(!id){ notFound(); }
+  else {
+    try {
+      const snap=await getDoc(doc(db,'workers',id));
+      if(!snap.exists()){ notFound(); }
+      else {
+        const w={id:snap.id,...snap.data()};
+        const t=getTrade(w.trade);
+        document.title=`${w.name} — ${t.label} | Tekton`;
+
+        const avatar=w.photo
+          ?`<img src="${esc(w.photo)}" alt="${esc(w.name)}" style="width:130px;height:130px;border-radius:50%;object-fit:cover;border:4px solid var(--accent);flex-shrink:0;">`
+          :`<div style="width:130px;height:130px;border-radius:50%;background:#2c2c2c;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:2.8rem;font-weight:700;color:#666;border:4px solid var(--accent);flex-shrink:0;">${initials(w.name)}</div>`;
+
+        pg.innerHTML=`
+          <div style="background:var(--dark);padding:2.5rem 0 2rem;">
+            <div class="container">
+              <div class="bc">
+                <a href="../index.html">Accueil</a><span>›</span>
+                <a href="workers.html">Professionnels</a><span>›</span>
+                <span style="color:#777;">${esc(w.name)}</span>
+              </div>
+              <div style="display:flex;gap:1.8rem;align-items:flex-start;flex-wrap:wrap;margin-top:1rem;">
+                ${avatar}
+                <div style="flex:1;">
+                  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.5rem;align-items:center;">
+                    <span class="badge badge-trade">${t.emoji} ${esc(t.label)}</span>
+                    ${w.verified?'<span class="badge badge-verified">✓ Vérifié</span>':''}
+                    ${w.available===false
+                      ?'<span style="background:#555;color:#ccc;font-size:.68rem;font-weight:700;padding:.2rem .55rem;border-radius:2px;text-transform:uppercase;letter-spacing:.07em;">Occupé</span>'
+                      :'<span style="background:#1e7e34;color:#fff;font-size:.68rem;font-weight:700;padding:.2rem .55rem;border-radius:2px;text-transform:uppercase;letter-spacing:.07em;">✓ Disponible</span>'}
+                  </div>
+                  <h1 style="color:#fff;font-size:2.4rem;margin:.3rem 0;">${esc(w.name)}</h1>
+                  <div style="color:#888;font-size:.86rem;margin-bottom:.5rem;">
+                    📍 ${esc(w.city)}
+                    ${w.yearsExp?` · 🏆 ${w.yearsExp} an${w.yearsExp>1?'s':''} d'expérience`:''}
+                    · Membre depuis ${fmtDate(w.createdAt)}
+                  </div>
+                  <div style="margin-bottom:1rem;">${stars(w.rating)}</div>
+                  <div style="display:flex;gap:.8rem;flex-wrap:wrap;">
+                    ${w.phone?`<a href="tel:${esc(w.phone.replace(/\s/g,''))}" class="btn btn-primary">📞 Appeler</a>`:''}
+                    ${w.email?`<a href="mailto:${esc(w.email)}" class="btn btn-ghost" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);color:#fff;">✉️ E-mail</a>`:''}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <section class="section">
+            <div class="container">
+              <div style="display:grid;grid-template-columns:1fr 300px;gap:2rem;align-items:start;" id="pg-grid">
+
+                <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+                  <div class="form-wrap">
+                    <h2 style="font-size:1.3rem;margin-bottom:1rem;">À propos</h2>
+                    <p style="line-height:1.8;color:var(--mid);">${esc(w.description)}</p>
+                    ${w.yearsExp?`<div style="margin-top:1rem;display:inline-flex;align-items:center;gap:.5rem;background:var(--bg);padding:.5rem 1rem;border-radius:20px;font-size:.84rem;font-weight:600;">🏆 ${w.yearsExp} an${w.yearsExp>1?'s':''} d'expérience</div>`:''}
+                  </div>
+
+                  ${w.specialties&&w.specialties.length?`
+                  <div class="form-wrap">
+                    <h2 style="font-size:1.3rem;margin-bottom:1rem;">Spécialités</h2>
+                    <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+                      ${w.specialties.map(s=>`<span style="background:var(--bg);border:1.5px solid var(--border);border-radius:20px;padding:.3rem .85rem;font-size:.8rem;font-weight:500;">${esc(s)}</span>`).join('')}
+                    </div>
+                  </div>`:''}
+
+                  ${w.rateType?`
+                  <div class="form-wrap">
+                    <h2 style="font-size:1.3rem;margin-bottom:1rem;">Tarifs</h2>
+                    ${w.rateType!=='quote'&&(w.rateMin||w.rateMax)?`
+                      <div style="background:var(--accent-lt,#fff4e6);border:1.5px solid var(--accent);border-radius:var(--radius);padding:.7rem 1.2rem;display:inline-block;margin-bottom:.8rem;">
+                        <div style="font-family:var(--font-d);font-size:1.5rem;color:var(--accent);font-weight:700;">${w.rateMin&&w.rateMax?`${w.rateMin}€ – ${w.rateMax}€`:`${w.rateMin||w.rateMax}€`}</div>
+                        <div style="font-size:.74rem;color:var(--muted);">${{hourly:'/ heure',project:'/ projet',both:'/ heure ou projet'}[w.rateType]||''}</div>
+                      </div>`:''}
+                    ${w.rateType==='quote'?'<p style="font-size:.88rem;color:var(--mid);">💬 Tarif sur devis uniquement.</p>':''}
+                    ${w.rateNote?`<p style="font-size:.84rem;color:var(--mid);">💡 ${esc(w.rateNote)}</p>`:''}
+                  </div>`:''}
+
+                  ${w.jobTypes&&w.jobTypes.length?`
+                  <div class="form-wrap">
+                    <h2 style="font-size:1.3rem;margin-bottom:1rem;">Travaux acceptés</h2>
+                    <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+                      ${w.jobTypes.map(j=>`<span style="background:var(--dark);color:#ddd;border-radius:20px;padding:.3rem .85rem;font-size:.8rem;font-weight:500;">✓ ${esc(j)}</span>`).join('')}
+                    </div>
+                  </div>`:''}
+
+                  ${w.certifications&&w.certifications.length?`
+                  <div class="form-wrap">
+                    <h2 style="font-size:1.3rem;margin-bottom:1rem;">Certifications & Assurances</h2>
+                    <div style="display:flex;flex-direction:column;gap:.5rem;">
+                      ${w.certifications.map(c=>`<div style="display:flex;align-items:center;gap:.6rem;font-size:.88rem;font-weight:500;"><span style="color:var(--success);">✓</span> ${esc(CERT_LABELS[c]||'🏅 '+c)}</div>`).join('')}
+                    </div>
+                  </div>`:''}
+
+                  ${w.experiences&&w.experiences.length?`
+                  <div class="form-wrap">
+                    <h2 style="font-size:1.3rem;margin-bottom:1.2rem;">Expérience professionnelle</h2>
+                    ${w.experiences.map(e=>`
+                      <div style="border-left:3px solid var(--border);padding-left:1rem;margin-bottom:1.2rem;position:relative;">
+                        <div style="position:absolute;left:-6px;top:.4rem;width:9px;height:9px;border-radius:50%;background:var(--accent);"></div>
+                        <div style="font-weight:600;font-size:.92rem;">${esc(e.role)}</div>
+                        ${e.company?`<div style="font-size:.82rem;color:var(--muted);">${esc(e.company)}</div>`:''}
+                        <div style="font-size:.78rem;color:var(--accent);margin:.2rem 0;">${e.from||''} ${e.to?'→ '+e.to:'→ Présent'}</div>
+                        ${e.desc?`<p style="font-size:.83rem;color:var(--mid);margin-top:.3rem;">${esc(e.desc)}</p>`:''}
+                      </div>`).join('')}
+                  </div>`:''}
+
+                  <div class="form-wrap">
+                    <h2 style="font-size:1.3rem;margin-bottom:.5rem;">Avis clients</h2>
+                    <p style="font-size:.84rem;color:var(--muted);font-style:italic;">Disponible prochainement.</p>
+                  </div>
+
+                </div>
+
+                <!-- Sidebar contacto -->
+                <div>
+                  <div class="form-wrap" style="border-top:3px solid var(--accent);position:sticky;top:80px;">
+                    <h3 style="font-size:1.15rem;margin-bottom:1rem;">Contacter ${esc(w.name.split(' ')[0])}</h3>
+                    ${w.available===false?`<div style="background:#f5f5f5;border:1px solid #ddd;border-radius:var(--radius);padding:.7rem;font-size:.82rem;color:#777;text-align:center;margin-bottom:1rem;">⏸ Actuellement occupé</div>`:''}
+                    ${w.phone?`
+                    <div style="border-bottom:1px solid var(--border);padding:.65rem 0;display:flex;gap:.7rem;align-items:center;">
+                      <span>📞</span>
+                      <div>
+                        <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;">Téléphone</div>
+                        <a href="tel:${esc(w.phone.replace(/\s/g,''))}" style="color:var(--accent);font-weight:600;">${esc(w.phone)}</a>
+                      </div>
+                    </div>`:''}
+                    ${w.email?`
+                    <div style="padding:.65rem 0;display:flex;gap:.7rem;align-items:center;">
+                      <span>✉️</span>
+                      <div>
+                        <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;">E-mail</div>
+                        <a href="mailto:${esc(w.email)}" style="color:var(--accent);font-size:.84rem;word-break:break-all;">${esc(w.email)}</a>
+                      </div>
+                    </div>`:''}
+                    <div style="display:flex;flex-direction:column;gap:.6rem;margin-top:1rem;">
+                      ${w.phone?`<a href="tel:${esc(w.phone.replace(/\s/g,''))}" class="btn btn-primary btn-full">📞 Appeler maintenant</a>`:''}
+                      ${w.email?`<a href="mailto:${esc(w.email)}" class="btn btn-outline btn-full">✉️ Envoyer un e-mail</a>`:''}
+                    </div>
+                    <p style="font-size:.72rem;color:var(--muted);text-align:center;margin-top:1rem;">Contact direct · 0% commission</p>
+                  </div>
+                </div>
+
+              </div>
+              <div style="margin-top:1.5rem;">
+                <a href="workers.html" style="color:var(--accent);font-size:.86rem;">← Retour aux professionnels</a>
+              </div>
+            </div>
+          </section>`;
+
+        if(window.innerWidth<720){const g=document.getElementById('pg-grid');if(g)g.style.gridTemplateColumns='1fr';}
+      }
+    } catch(e){
+      console.error(e);
+      pg.innerHTML=`<div class="container" style="padding:4rem 0;text-align:center;"><h2>Erreur</h2><p style="color:var(--muted);margin:.8rem 0 1.5rem;">Impossible de charger ce profil.</p><a href="workers.html" class="btn btn-primary">Voir les pros</a></div>`;
+    }
+  }
+</script>
+</body>
+</html>
